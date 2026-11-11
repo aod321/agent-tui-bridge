@@ -8,6 +8,8 @@
 # LABEL defaults to claude/codex when the command starts with that name, otherwise atb
 # (or $ATB_SESSION). Refuses to reuse an existing label: send to it with term-send,
 # or kill it first with: bin/rex kill LABEL
+# Prints rex's JSON, then session=LABEL, session_id=ID and block_id=ID lines. Use the
+# IDs afterwards: Rex agent hooks may rename the session while the agent runs.
 #
 # A command is started with rex new --interactive so ~/.zshrc PATH applies, and
 # becomes the pane's root process. A single argument that looks like a shell
@@ -75,5 +77,11 @@ else
   args+=(--interactive -- "$@")
 fi
 
-"$DIR/rex" "${args[@]}"
+out=$("$DIR/rex" "${args[@]}")
+printf '%s\n' "$out"
 echo "session=$LABEL"
+# Print the IDs too. Rex agent hooks can rename the session later; the ID stays.
+printf '%s' "$out" | python3 -c 'import json, sys
+d = json.load(sys.stdin)
+print("session_id=" + d["session_id"])
+print("block_id=" + d["initial_windows"][0]["block_ids"][0])'

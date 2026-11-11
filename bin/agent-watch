@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""Wait until a Claude Code / Codex turn ends OR the agent needs a person.
+
+  agent-watch mark claude|codex -s SESSION [-b BLOCK] [--log FILE]
+        print the current line count of the pane's session log (run before sending)
+  agent-watch log claude|codex -s SESSION [-b BLOCK]
+        print the session log path of the agent running in the pane
+  agent-watch claude|codex -s SESSION [-b BLOCK] --from N [--log FILE]
+              [--timeout 600] [--interval 1] [--read-tabs] [--json]
+        block until one of: the turn ends, a prompt waits for a person, the
+        agent/pane exits, or the timeout passes
+
+SESSION is a Rex session ID, ID suffix, or label. Prefer the ID: Rex's agent
+hooks can rename a session while the agent runs. The label is resolved once.
+
+Output: the first line is a status line of shell-quoted key=value pairs, e.g.
+  status=needs_input kind=question source=rex_status tool=claude session=session:... block=block:... ...
+status is one of turn_end | needs_input | exited | timeout. Then:
+  turn_end     the final assistant reply between "----- reply -----" markers
+  needs_input  the prompt copied verbatim from the screen, plus questions from
+               the log when present; forward it to the person unchanged
+  exited       the last lines of the screen
+  timeout      the last lines of the screen
+--json prints one JSON object instead.
+
+Exit codes: 0 turn_end, 4 needs_input, 5 exited, 3 timeout, 2 bad target or
+arguments, 1 other errors.
+
+The log is found from the pane: Claude via ~/.claude/sessions/<pid>.json
+(exact); Codex via the rollout for the pane's cwd written since the process
+started (an error if several match: pass --log). --read-tabs also reads every
+page of a multi-question menu (it presses Left/Right, then returns to page 1).
+"""
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+
+from atb import logs
+from atb.rex import Rex, RexError, TargetError, resolve
+from atb.watch import resolve_log, watch
+
+
+def target_args(ap):
+    ap.add_argument("tool", choices=logs.TOOLS)
+    ap.add_argument("-s", "--session", default=os.environ.get("ATB_SESSION"),
+                    help="Rex session ID (preferred) or label; default $ATB_SESSION")
+    ap.add_argument("-b", "--block", help="Rex block ID; needed when the session has several panes")
+    ap.add_argument("--log", help="session log file (default: found from the pane)")
+    ap.add_argument("--start-timeout", type=float, default=15,
+                    help="seconds to wait for claude/codex to start in the pane (default 15)")
+
+
+def find_log(rex, target, tool, explicit, start_timeout):
+    if explicit:
+        if not os.path.exists(explicit):
+            raise TargetError(f"log file not found: {explicit}")
+        return explicit, None
+    return resolve_log(rex, target, tool, start_timeout)
+
+
+def main(argv):
+    if argv and argv[0] in ("mark", "log"):
+        cmd = argv[0]
+        ap = argparse.ArgumentParser(prog=f"agent-watch {cmd}")
+        target_args(ap)
+        a = ap.parse_args(argv[1:])
+        rex = Rex()
+        t = resolve(rex, a.session, a.block, a.tool)
+        path, _resolver = find_log(rex, t, a.tool, a.log, a.start_timeout)
+        if cmd == "log":
+            if not path:
+                raise TargetError("the agent has not written a log yet; send the first prompt, then retry")
+            print(path)
+            return 0
+        n = logs.line_count(path) if path and os.path.exists(path) else 0
+        print(f"log={path or '(not created yet)'} session={t.session_id} block={t.block_id}", file=sys.stderr)
+        print(n)
+        return 0
+
+    ap = argparse.ArgumentParser(prog="agent-watch", description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    target_args(ap)
+    ap.add_argument("--from", dest="frm", type=int, required=True,
+                    help="log line count from `agent-watch mark` / `agent-log mark`, taken before sending")
+    ap.add_argument("--timeout", type=float, default=600)
+    ap.add_argument("--interval", type=float, default=1.0, help="seconds between polls")
+    ap.add_argument("--read-tabs", action="store_true",
+                    help="on a multi-question menu, capture every page (sends Left/Right, returns to page 1)")
+    ap.add_argument("--json", action="store_true")
+    a = ap.parse_args(argv)
+    rex = Rex()
+    t = resolve(rex, a.session, a.block, a.tool)
+    path, resolver = find_log(rex, t, a.tool, a.log, a.start_timeout)
+    r = watch(rex, t, a.tool, path, a.frm, timeout=a.timeout, interval=a.interval,
+              log_resolver=resolver, read_tabs=a.read_tabs, start_timeout=a.start_timeout)
+    print(r.to_json() if a.json else r.to_text())
+    return r.code
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except TargetError as e:
+        print(f"agent-watch: {e}", file=sys.stderr)
+        sys.exit(2)
+    except RexError as e:
+        print(f"agent-watch: {e}", file=sys.stderr)
+        sys.exit(1)

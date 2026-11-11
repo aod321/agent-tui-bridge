@@ -1,0 +1,7 @@
+{"type": "user", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "u1", "message": {"role": "user", "content": "Clean up the proxy profile."}}
+{"type": "mode", "mode": "normal", "sessionId": "00000000-0000-4000-8000-000000000001"}
+{"type": "permission-mode", "permissionMode": "auto", "sessionId": "00000000-0000-4000-8000-000000000001"}
+{"type": "attachment", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "a1", "attachment": {"type": "skill_listing"}}
+{"type": "assistant", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "as1", "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [{"type": "thinking", "thinking": "", "signature": "x"}]}}
+{"type": "assistant", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "as3", "message": {"role": "assistant", "model": "claude-opus-5-5", "content": [{"type": "text", "text": "Done: pruned to 7 nodes."}], "stop_reason": "end_turn"}}
+{"type": "system", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "subtype": "turn_duration", "durationMs": 9198, "messageCount": 20}

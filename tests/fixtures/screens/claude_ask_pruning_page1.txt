@@ -1,0 +1,22 @@
+
+⏺ All three servers are reachable. Before I edit the profile I need four
+  decisions from you.
+
+────────────────────────────────────────────────────────────────────────────────
+←  ☐ Pruning  ☐ lisa  ☐ Airport  ☐ Shadowrocket  ✔ Submit  →
+
+Node pruning for the main profile. Several protocols fail on two servers. How
+far should I cut?
+
+❯ 1. 3 main protocols per server (Recommended)
+     Keep the three protocols that pass on every server. Around 6–8 nodes.
+  2. Remove only the failing ones
+     Drop the protocols that fail the test and keep the rest. Around 16
+     nodes.
+  3. Each server keeps just 1–2
+     Keep the two most reliable protocols per server. Around 4–5 nodes.
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

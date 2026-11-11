@@ -1,0 +1,15 @@
+
+⏺ The menu looked like this:
+
+  ←  ☐ Color  ☐ Pets  ☐ Size  ✔ Submit  →
+  ❯ 1. Red
+    2. Green
+  Enter to select · Tab/Arrow keys to navigate · Esc to cancel
+
+  The watcher should report it as needs_input.
+
+✻ Worked for 12s · done 6:01 PM
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  -- INSERT -- ⏸ manual mode on

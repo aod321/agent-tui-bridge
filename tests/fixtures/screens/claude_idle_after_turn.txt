@@ -1,0 +1,14 @@
+
+⏺ User answered Claude's questions:
+  ⎿  · Which color do you prefer? → Green
+     · Which pets do you like? Select all that apply. → Cat, Fish
+     · Which size do you prefer? → Large
+
+⏺ You chose Green for color, Cat and Fish for pets, and Large for size.
+
+✻ Churned for 9s · done 5:58 PM
+                                                             ◉ xhigh · /effort
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)

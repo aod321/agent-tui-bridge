@@ -1,14 +1,67 @@
 #!/bin/bash
-# Paste text into a terminal tab and press Enter. Uses the clipboard so CJK text and
-# slash commands arrive intact. Restores the previous clipboard text afterwards.
-# Usage: term-send [-a APP] [-t TAB] [-n] "text"
-#   -a APP  terminal app name (default: $ATB_TERM or "Rex Beta")
-#   -t TAB  switch to tab N with Cmd+N first
-#   -n      do not press Enter
-APP="${ATB_TERM:-Rex Beta}"; TAB=""; ENTER=1
-while getopts "a:t:n" o; do case $o in a) APP=$OPTARG;; t) TAB=$OPTARG;; n) ENTER=0;; esac; done
-shift $((OPTIND-1)); TEXT="$*"
-OLD="$(pbpaste 2>/dev/null)"
+# Send text to a terminal. Prefers the Rex CLI (no focus steal, no clipboard).
+# Usage:
+#   term-send [-s SESSION] [-b BLOCK] [-w WINDOW] [-n] "text"
+#   term-send -a APP [-t TAB] [-n] "text"   # AppleScript fallback
+#     -s SESSION  Rex session label or ID (default: $ATB_SESSION)
+#     -b BLOCK    Rex block label or ID
+#     -w WINDOW   Rex window label or ID
+#     -n          do not press Enter
+#     -a APP      drive this app with AppleScript instead of rex
+#     -t TAB      with -a, switch to tab N with Cmd+N first
+# Set ATB_BACKEND=osascript to force the AppleScript path.
+set -euo pipefail
+DIR=$(cd "$(dirname "$0")" && pwd)
+SESSION="${ATB_SESSION:-}"
+BLOCK=""
+WINDOW=""
+APP=""
+TAB=""
+ENTER=1
+while getopts "s:b:w:a:t:n" o; do
+  case $o in
+    s) SESSION=$OPTARG;;
+    b) BLOCK=$OPTARG;;
+    w) WINDOW=$OPTARG;;
+    a) APP=$OPTARG;;
+    t) TAB=$OPTARG;;
+    n) ENTER=0;;
+  esac
+done
+shift $((OPTIND-1))
+TEXT="$*"
+
+use_rex() {
+  [ "${ATB_BACKEND:-}" = osascript ] && return 1
+  if [ -n "$APP" ]; then
+    case "$APP" in
+      [Rr]ex|[Rr]ex" Beta") ;;
+      *) return 1;;
+    esac
+  fi
+  "$DIR/rex" version >/dev/null 2>&1
+}
+
+if use_rex; then
+  if [ -z "$SESSION" ] && [ -z "$BLOCK" ]; then
+    echo "term-send: pass -s SESSION (or set ATB_SESSION), or -b BLOCK" >&2
+    exit 2
+  fi
+  args=()
+  [ -n "$SESSION" ] && args+=(-s "$SESSION")
+  [ -n "$BLOCK" ] && args+=(-b "$BLOCK")
+  [ -n "$WINDOW" ] && args+=(-w "$WINDOW")
+  if [ -n "$TEXT" ]; then
+    "$DIR/rex" send "${args[@]}" -- "$TEXT"
+  fi
+  if [ "$ENTER" = 1 ]; then
+    "$DIR/rex" send-key "${args[@]}" enter
+  fi
+  exit 0
+fi
+
+APP="${APP:-${ATB_TERM:-Rex Beta}}"
+OLD="$(pbpaste 2>/dev/null || true)"
 printf '%s' "$TEXT" | pbcopy
 osascript - "$APP" "$TAB" "$ENTER" <<'AS'
 on run argv
@@ -28,4 +81,5 @@ on run argv
   end tell
 end run
 AS
-sleep 0.3; printf '%s' "$OLD" | pbcopy
+sleep 0.3
+printf '%s' "$OLD" | pbcopy

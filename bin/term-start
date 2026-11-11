@@ -1,9 +1,79 @@
 #!/bin/bash
-# Open a new terminal tab (Cmd+T) and run a command in it, e.g. claude or codex.
-# Usage: term-start [-a APP] "command"
-APP="${ATB_TERM:-Rex Beta}"
-while getopts "a:" o; do case $o in a) APP=$OPTARG;; esac; done
+# Start a labeled Rex session and optionally run a command in it.
+# Usage:
+#   term-start [-s LABEL] [-c CWD]
+#   term-start [-s LABEL] [-c CWD] [--] command [args...]
+#   term-start [-s LABEL] [-c CWD] "shell snippet"
+#   term-start -a APP "command"   # AppleScript new-tab fallback
+# LABEL defaults to claude/codex when the command starts with that name, otherwise atb
+# (or $ATB_SESSION). Refuses to reuse an existing label: send to it with term-send,
+# or kill it first with: bin/rex kill LABEL
+#
+# A command is started with rex new --interactive so ~/.zshrc PATH applies, and
+# becomes the pane's root process. A single argument that looks like a shell
+# snippet is run with zsh -c. A session with no command is a default login shell
+# (--interactive is omitted; Rex requires a command for that flag).
+set -euo pipefail
+DIR=$(cd "$(dirname "$0")" && pwd)
+LABEL="${ATB_SESSION:-}"
+CWD=""
+APP=""
+while getopts "s:c:a:" o; do
+  case $o in
+    s) LABEL=$OPTARG;;
+    c) CWD=$OPTARG;;
+    a) APP=$OPTARG;;
+  esac
+done
 shift $((OPTIND-1))
-open -a "$APP"; sleep 1
-osascript -e "tell application \"$APP\" to activate" -e 'delay 0.6' -e 'tell application "System Events" to keystroke "t" using command down' -e 'delay 1.2'
-"$(dirname "$0")/term-send" -a "$APP" "$*"
+# Drop a literal -- used to separate options from the command.
+if [ "${1:-}" = "--" ]; then shift; fi
+CMD_STR="$*"
+
+use_rex() {
+  [ "${ATB_BACKEND:-}" = osascript ] && return 1
+  if [ -n "$APP" ]; then
+    case "$APP" in
+      [Rr]ex|[Rr]ex" Beta") ;;
+      *) return 1;;
+    esac
+  fi
+  "$DIR/rex" version >/dev/null 2>&1
+}
+
+if ! use_rex; then
+  APP="${APP:-${ATB_TERM:-Rex Beta}}"
+  open -a "$APP"
+  sleep 1
+  osascript -e "tell application \"$APP\" to activate" -e 'delay 0.6' \
+    -e 'tell application "System Events" to keystroke "t" using command down' -e 'delay 1.2'
+  exec "$DIR/term-send" -a "$APP" "$CMD_STR"
+fi
+
+if [ -z "$LABEL" ]; then
+  case "$CMD_STR" in
+    claude|claude\ *|*/claude|*/claude\ *) LABEL=claude;;
+    codex|codex\ *|*/codex|*/codex\ *) LABEL=codex;;
+    *) LABEL=atb;;
+  esac
+fi
+
+if "$DIR/rex" ls | awk -v l="$LABEL" 'NR > 1 && $1 == l { found=1 } END { exit !found }'; then
+  echo "session '$LABEL' already exists. Reuse it with: $DIR/term-send -s $LABEL \"...\"" >&2
+  echo "Or kill it first: $DIR/rex kill $LABEL" >&2
+  exit 1
+fi
+
+args=(new "$LABEL" --keep-open --json)
+[ -n "$CWD" ] && args+=(-c "$CWD")
+
+if [ "$#" -eq 0 ]; then
+  : # default login shell; do not pass --interactive
+elif [ "$#" -eq 1 ] && [[ "$1" == *[$'&|;<>(){}`']* || "$1" == *&&* || "$1" == *||* ]]; then
+  args+=(--interactive -- zsh -c "$1")
+else
+  args+=(--interactive -- "$@")
+fi
+
+"$DIR/rex" "${args[@]}"
+echo "session=$LABEL"

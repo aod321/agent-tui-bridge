@@ -1,0 +1,46 @@
+#!/bin/bash
+# Locate the Rex CLI and exec it. Override with ATB_REX=/path/to/rex
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+is_self() {
+  local found="$1"
+  [ "$found" = "$here/rex" ] && return 0
+  local a b
+  a=$(realpath "$found" 2>/dev/null) || return 1
+  b=$(realpath "$here/rex" 2>/dev/null) || return 1
+  [ "$a" = "$b" ]
+}
+find_rex() {
+  if [ -n "${ATB_REX:-}" ]; then
+    if [ -x "$ATB_REX" ]; then
+      printf '%s\n' "$ATB_REX"
+      return 0
+    fi
+    echo "ATB_REX is set but not executable: $ATB_REX" >&2
+    return 1
+  fi
+  if command -v rex >/dev/null 2>&1; then
+    local found
+    found=$(command -v rex)
+    if ! is_self "$found"; then
+      printf '%s\n' "$found"
+      return 0
+    fi
+  fi
+  local c
+  for c in \
+    "/Applications/Rex Beta.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex" \
+    "/Applications/Rex.app/Contents/Helpers/Rex Server.rex/Contents/MacOS/rex"
+  do
+    if [ -x "$c" ]; then
+      printf '%s\n' "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+bin=$(find_rex) || {
+  echo "rex CLI not found. Install Rex (https://www.superlogical.com/rex), or set ATB_REX to the binary." >&2
+  exit 127
+}
+exec "$bin" "$@"

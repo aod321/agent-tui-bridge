@@ -1,10 +1,69 @@
 #!/bin/bash
-# Send keys to a terminal app (menus like /model, trust prompts).
-# Usage: term-key [-a APP] [-t TAB] key [key ...]
-# keys: up down left right enter esc tab space, or a single character like s / 1 / y
-APP="${ATB_TERM:-Rex Beta}"; TAB=""
-while getopts "a:t:" o; do case $o in a) APP=$OPTARG;; t) TAB=$OPTARG;; esac; done
+# Send keys to a terminal. Prefers the Rex CLI (no focus steal).
+# Usage:
+#   term-key [-s SESSION] [-b BLOCK] [-w WINDOW] key [key ...]
+#   term-key -a APP [-t TAB] key [key ...]
+# keys: up down left right enter esc tab space, rex bindings like ctrl+c,
+#       or a single character such as s / 1 / y
+set -euo pipefail
+DIR=$(cd "$(dirname "$0")" && pwd)
+SESSION="${ATB_SESSION:-}"
+BLOCK=""
+WINDOW=""
+APP=""
+TAB=""
+while getopts "s:b:w:a:t:" o; do
+  case $o in
+    s) SESSION=$OPTARG;;
+    b) BLOCK=$OPTARG;;
+    w) WINDOW=$OPTARG;;
+    a) APP=$OPTARG;;
+    t) TAB=$OPTARG;;
+  esac
+done
 shift $((OPTIND-1))
+if [ "$#" -eq 0 ]; then
+  echo "term-key: need at least one key" >&2
+  exit 2
+fi
+
+map_key() {
+  case "$1" in
+    enter|return) printf '%s\n' enter;;
+    esc|escape) printf '%s\n' esc;;
+    *) printf '%s\n' "$1";;
+  esac
+}
+
+use_rex() {
+  [ "${ATB_BACKEND:-}" = osascript ] && return 1
+  if [ -n "$APP" ]; then
+    case "$APP" in
+      [Rr]ex|[Rr]ex" Beta") ;;
+      *) return 1;;
+    esac
+  fi
+  "$DIR/rex" version >/dev/null 2>&1
+}
+
+if use_rex; then
+  if [ -z "$SESSION" ] && [ -z "$BLOCK" ]; then
+    echo "term-key: pass -s SESSION (or set ATB_SESSION), or -b BLOCK" >&2
+    exit 2
+  fi
+  args=()
+  [ -n "$SESSION" ] && args+=(-s "$SESSION")
+  [ -n "$BLOCK" ] && args+=(-b "$BLOCK")
+  [ -n "$WINDOW" ] && args+=(-w "$WINDOW")
+  keys=()
+  for k in "$@"; do
+    keys+=("$(map_key "$k")")
+  done
+  "$DIR/rex" send-key "${args[@]}" "${keys[@]}"
+  exit 0
+fi
+
+APP="${APP:-${ATB_TERM:-Rex Beta}}"
 S="tell application \"$APP\" to activate
 delay 0.5
 tell application \"System Events\"
@@ -14,8 +73,14 @@ delay 0.6
 "
 for k in "$@"; do
   case $k in
-    up) S+="key code 126";; down) S+="key code 125";; left) S+="key code 123";; right) S+="key code 124";;
-    enter|return) S+="key code 36";; esc|escape) S+="key code 53";; tab) S+="key code 48";; space) S+="key code 49";;
+    up) S+="key code 126";;
+    down) S+="key code 125";;
+    left) S+="key code 123";;
+    right) S+="key code 124";;
+    enter|return) S+="key code 36";;
+    esc|escape) S+="key code 53";;
+    tab) S+="key code 48";;
+    space) S+="key code 49";;
     *) S+="keystroke \"$k\"";;
   esac
   S+="

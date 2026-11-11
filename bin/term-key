@@ -1,0 +1,26 @@
+#!/bin/bash
+# Send keys to a terminal app (menus like /model, trust prompts).
+# Usage: term-key [-a APP] [-t TAB] key [key ...]
+# keys: up down left right enter esc tab space, or a single character like s / 1 / y
+APP="${ATB_TERM:-Rex Beta}"; TAB=""
+while getopts "a:t:" o; do case $o in a) APP=$OPTARG;; t) TAB=$OPTARG;; esac; done
+shift $((OPTIND-1))
+S="tell application \"$APP\" to activate
+delay 0.5
+tell application \"System Events\"
+"
+[ -n "$TAB" ] && S+="keystroke \"$TAB\" using command down
+delay 0.6
+"
+for k in "$@"; do
+  case $k in
+    up) S+="key code 126";; down) S+="key code 125";; left) S+="key code 123";; right) S+="key code 124";;
+    enter|return) S+="key code 36";; esc|escape) S+="key code 53";; tab) S+="key code 48";; space) S+="key code 49";;
+    *) S+="keystroke \"$k\"";;
+  esac
+  S+="
+delay 0.35
+"
+done
+S+="end tell"
+osascript -e "$S"

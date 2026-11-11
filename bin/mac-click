@@ -1,0 +1,8 @@
+#!/bin/bash
+# Real mouse click at screen points X Y. Compiles the helper on first use.
+DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BIN="$DIR/.build/click"
+if [ ! -x "$BIN" ] || [ "$DIR/src/click.swift" -nt "$BIN" ]; then
+  mkdir -p "$DIR/.build" && swiftc -O "$DIR/src/click.swift" -o "$BIN" || exit 1
+fi
+exec "$BIN" "$@"

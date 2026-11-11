@@ -1,0 +1,31 @@
+#!/bin/bash
+# Paste text into a terminal tab and press Enter. Uses the clipboard so CJK text and
+# slash commands arrive intact. Restores the previous clipboard text afterwards.
+# Usage: term-send [-a APP] [-t TAB] [-n] "text"
+#   -a APP  terminal app name (default: $ATB_TERM or "Rex Beta")
+#   -t TAB  switch to tab N with Cmd+N first
+#   -n      do not press Enter
+APP="${ATB_TERM:-Rex Beta}"; TAB=""; ENTER=1
+while getopts "a:t:n" o; do case $o in a) APP=$OPTARG;; t) TAB=$OPTARG;; n) ENTER=0;; esac; done
+shift $((OPTIND-1)); TEXT="$*"
+OLD="$(pbpaste 2>/dev/null)"
+printf '%s' "$TEXT" | pbcopy
+osascript - "$APP" "$TAB" "$ENTER" <<'AS'
+on run argv
+  set appName to item 1 of argv
+  set tabN to item 2 of argv
+  set doEnter to item 3 of argv
+  tell application appName to activate
+  delay 0.6
+  tell application "System Events"
+    if tabN is not "" then
+      keystroke tabN using command down
+      delay 0.6
+    end if
+    keystroke "v" using command down
+    delay 0.5
+    if doEnter is "1" then key code 36
+  end tell
+end run
+AS
+sleep 0.3; printf '%s' "$OLD" | pbcopy

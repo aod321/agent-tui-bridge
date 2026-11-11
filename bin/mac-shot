@@ -1,0 +1,7 @@
+#!/bin/bash
+# Screenshot the whole screen, downscaled. Usage: mac-shot [out.png] [maxpx=1600]
+OUT="${1:-$HOME/terminals/atb-shot.png}"; MAX="${2:-1600}"
+mkdir -p "$(dirname "$OUT")"
+screencapture -x "$OUT" && sips -Z "$MAX" "$OUT" >/dev/null && echo "$OUT"
+# Print the point size of the screen so image coords can be mapped to click coords.
+osascript -e 'tell application "Finder" to get bounds of window of desktop' | awk -F', ' '{print "screen_points=" $3 "x" $4}'

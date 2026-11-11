@@ -2,99 +2,94 @@
 """Find and read Claude Code / Codex CLI session logs.
 
   agent-log latest claude|codex [--cwd DIR]     print newest session file path
+  agent-log latest claude|codex -s SESSION      print the log of the agent running in that Rex pane
   agent-log mark FILE                            print current line count (use before sending)
   agent-log wait claude|codex FILE --from N [--timeout 300]
         block until the turn after line N finishes; print the final assistant reply
+  agent-log wait claude|codex FILE --from N -s SESSION [--timeout 300] [--json]
+        same as agent-watch: also returns when a prompt waits for a person or the
+        agent exits, and prints a status line first (see bin/agent-watch --help)
   agent-log show claude|codex FILE [--last 20]  print readable user/assistant transcript
   agent-log model claude|codex FILE              print the model used by the latest turn
 
 Both tools append JSONL in real time, one whole message per line (no token streaming).
 Turn end markers: Claude -> {"type":"system","subtype":"turn_duration"};
 Codex -> {"type":"event_msg","payload":{"type":"task_complete"}}.
+
+Without -s, `wait` only sees the log. Claude does not log a pending
+AskUserQuestion until it is answered, so a menu on screen looks like a long
+turn and `wait` runs into its timeout. Use agent-watch (or pass -s) instead.
 """
-import argparse, glob, json, os, sys, time
+import argparse
+import os
+import sys
+import time
 
-def latest(tool, cwd=None):
-    if tool == "claude":
-        base = os.path.expanduser("~/.claude/projects")
-        if cwd:
-            key = os.path.abspath(os.path.expanduser(cwd)).replace("/", "-").replace(".", "-").replace("_", "-")
-            files = glob.glob(f"{base}/{key}/*.jsonl")
-        else:
-            files = glob.glob(f"{base}/*/*.jsonl")
-    else:
-        files = glob.glob(os.path.expanduser("~/.codex/sessions/*/*/*/rollout-*.jsonl"))
-        if cwd:
-            want = os.path.abspath(os.path.expanduser(cwd)); keep = []
-            for f in files:
-                try:
-                    with open(f) as fh: first = json.loads(fh.readline())
-                    if first.get("payload", {}).get("cwd") == want: keep.append(f)
-                except Exception: pass
-            files = keep
-    return max(files, key=os.path.getmtime) if files else None
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
 
-def rows(path, start=0):
-    out = []
-    with open(path) as fh:
-        for i, line in enumerate(fh):
-            if i < start: continue
-            try: out.append(json.loads(line))
-            except Exception: pass
-    return out
+from atb import logs
+from atb.rex import Rex, RexError, TargetError, resolve
 
-def text_of(tool, r):
-    """Return (role, text) for a user/assistant message row, else None."""
-    if tool == "claude":
-        if r.get("type") not in ("user", "assistant"): return None
-        c = (r.get("message") or {}).get("content")
-        if isinstance(c, str): t = c
-        else: t = "\n".join(x.get("text", "") for x in (c or []) if isinstance(x, dict) and x.get("type") == "text")
-        if r.get("isMeta") or not t.strip() or t.lstrip().startswith("<"): return None
-        return r["type"], t
-    p = r.get("payload") or {}
-    if r.get("type") == "response_item" and p.get("type") == "message" and p.get("role") in ("user", "assistant"):
-        t = "\n".join(x.get("text", "") for x in p.get("content", []) if isinstance(x, dict))
-        if not t.strip() or t.lstrip().startswith("<"): return None
-        return p["role"], t
-    return None
-
-def is_end(tool, r):
-    if tool == "claude": return r.get("type") == "system" and r.get("subtype") == "turn_duration"
-    return r.get("type") == "event_msg" and (r.get("payload") or {}).get("type") in ("task_complete", "turn_aborted")
-
-def model_of(tool, path):
-    m = None
-    for r in rows(path):
-        if tool == "claude" and r.get("type") == "assistant": m = (r.get("message") or {}).get("model") or m
-        if tool == "codex" and r.get("type") == "turn_context":
-            p = r.get("payload") or {}; m = f'{p.get("model")} effort={p.get("effort")}'
-    return m
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=["latest", "mark", "wait", "show", "model"])
     ap.add_argument("args", nargs="*")
-    ap.add_argument("--cwd"); ap.add_argument("--from", dest="frm", type=int, default=0)
-    ap.add_argument("--timeout", type=float, default=300); ap.add_argument("--last", type=int, default=20)
+    ap.add_argument("--cwd")
+    ap.add_argument("--from", dest="frm", type=int, default=0)
+    ap.add_argument("--timeout", type=float, default=300)
+    ap.add_argument("--last", type=int, default=20)
+    ap.add_argument("-s", "--session", help="Rex session ID or label (latest, wait)")
+    ap.add_argument("-b", "--block", help="Rex block ID (latest, wait)")
+    ap.add_argument("--json", action="store_true", help="with wait -s: print one JSON object")
     a = ap.parse_args()
     if a.cmd == "latest":
-        p = latest(a.args[0], a.cwd); print(p or ""); sys.exit(0 if p else 1)
+        tool = a.args[0]
+        if a.session or a.block:
+            from atb.watch import resolve_log
+            rex = Rex()
+            path, _ = resolve_log(rex, resolve(rex, a.session, a.block, tool), tool)
+        else:
+            path = logs.latest(tool, a.cwd)
+        print(path or "")
+        sys.exit(0 if path else 1)
     if a.cmd == "mark":
-        with open(a.args[0]) as fh: print(sum(1 for _ in fh)); return
-    tool, path = a.args[0], a.args[1]
-    if a.cmd == "model": print(model_of(tool, path)); return
-    if a.cmd == "show":
-        msgs = [m for m in (text_of(tool, r) for r in rows(path)) if m]
-        for role, t in msgs[-a.last:]: print(f"[{role}] {t}\n")
+        print(logs.line_count(a.args[0]))
         return
+    tool, path = a.args[0], a.args[1]
+    if a.cmd == "model":
+        print(logs.model_of(tool, path))
+        return
+    if a.cmd == "show":
+        msgs = [m for m in (logs.text_of(tool, r) for r in logs.rows(path)) if m]
+        for role, t in msgs[-a.last:]:
+            print(f"[{role}] {t}\n")
+        return
+    if a.session or a.block:
+        from atb.watch import watch
+        rex = Rex()
+        t = resolve(rex, a.session, a.block, tool)
+        r = watch(rex, t, tool, path, a.frm, timeout=a.timeout)
+        print(r.to_json() if a.json else r.to_text())
+        sys.exit(r.code)
     deadline = time.time() + a.timeout
     while time.time() < deadline:
-        new = rows(path, a.frm)
-        if any(is_end(tool, r) for r in new):
-            replies = [m[1] for m in (text_of(tool, r) for r in new) if m and m[0] == "assistant"]
-            print(replies[-1] if replies else ""); return
+        new = logs.rows(path, a.frm)
+        if any(logs.is_end(tool, r) for r in new):
+            print(logs.last_reply(tool, new))
+            return
         time.sleep(0.5)
-    print(f"timeout after {a.timeout}s; turn not finished (a prompt may be waiting on screen)", file=sys.stderr); sys.exit(3)
+    print(f"timeout after {a.timeout}s; turn not finished (a prompt may be waiting on screen; "
+          f"agent-watch / wait -s SESSION detects that)", file=sys.stderr)
+    sys.exit(3)
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except TargetError as e:
+        print(f"agent-log: {e}", file=sys.stderr)
+        sys.exit(2)
+    except RexError as e:
+        print(f"agent-log: {e}", file=sys.stderr)
+        sys.exit(1)

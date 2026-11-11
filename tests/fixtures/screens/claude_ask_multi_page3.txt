@@ -1,0 +1,21 @@
+
+❯ This is a UI test. Immediately call the AskUserQuestion tool exactly once
+  with 3 questions (no other tools, no prose first): Q1 header 'Color'
+  single-select options Red/Green/Blue; Q2 header 'Pets' multiSelect true
+  options Cat/Dog/Fish; Q3 header 'Size' single-select options Small/Large.
+  Give each option a one-line description. After answers, reply with one short
+  sentence.
+────────────────────────────────────────────────────────────────────────────────
+←  ☐ Color  ☐ Pets  ☐ Size  ✔ Submit  →
+
+Which size do you prefer?
+
+❯ 1. Small
+     Compact and lightweight.
+  2. Large
+     Spacious and roomy.
+  3. Type something.
+────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

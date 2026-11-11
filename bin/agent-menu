@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Read or answer the menu waiting on a Claude Code / Codex screen in Rex.
+
+  agent-menu show -s SESSION [-b BLOCK] [--json]
+        print the prompt on screen, verbatim (no keys sent)
+  agent-menu read -s SESSION [-b BLOCK] [--json]
+        print every page of a multi-question menu without answering: goes to
+        page 1, presses Right page by page capturing each, then returns to page 1
+  agent-menu answer -s SESSION [-b BLOCK] ANSWER [ANSWER ...] [--no-submit] [--key KEY]
+        answer the menu, one ANSWER per question page, in page order:
+          N          option N (the number shown on that page)
+          N,M,...    the options to tick on a multi-select page (others are unticked)
+          text:WORDS free text through "Type something"
+        A multi-question menu is then submitted ("1. Submit answers") unless
+        --no-submit, which stops on the review page. Other prompts (permission,
+        trust folder, /model, Codex approval) take one N, counted from the top
+        when the options have no numbers; the cursor moves there and KEY
+        (default enter) is pressed. For Claude's /model, --key s picks a model
+        for this session only.
+
+SESSION is a Rex session ID (preferred), ID suffix, or label.
+Exit codes: 0 done, 2 bad target or arguments, 1 the menu did not react as expected.
+"""
+import argparse
+import json
+import os
+import shlex
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+
+from atb import menu, screen
+from atb.rex import Rex, RexError, TargetError, resolve
+
+
+def main(argv):
+    ap = argparse.ArgumentParser(prog="agent-menu", description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("cmd", choices=["show", "read", "answer"])
+    ap.add_argument("answers", nargs="*")
+    ap.add_argument("-s", "--session", default=os.environ.get("ATB_SESSION"))
+    ap.add_argument("-b", "--block")
+    ap.add_argument("--no-submit", action="store_true")
+    ap.add_argument("--key", default="enter", help="key that confirms a non-question menu (default enter)")
+    ap.add_argument("--json", action="store_true")
+    a = ap.parse_args(argv)
+    rex = Rex()
+    t = resolve(rex, a.session, a.block)
+    head = f"session={t.session_id} block={t.block_id}"
+    if a.cmd == "show":
+        st = screen.analyze(rex.capture(t))
+        if a.json:
+            print(json.dumps(st.to_dict(), ensure_ascii=False))
+        elif not st.needs_input:
+            print(f"status=no_prompt {head}")
+            return 1
+        else:
+            print(f"status=prompt kind={st.kind} {head}")
+            print(st.prompt)
+        return 0
+    if a.cmd == "read":
+        if a.answers:
+            raise TargetError("read takes no answers")
+        pages = menu.read_all(rex, t)
+        if a.json:
+            print(json.dumps([p.to_dict() for p in pages], ensure_ascii=False))
+            return 0
+        print(f"status=pages count={len(pages)} {head}")
+        for p in pages:
+            print(f"----- page {p.index + 1}/{len(pages)}: {p.tab or ''} -----")
+            print(p.prompt)
+        print("----- end pages -----")
+        return 0
+    if not a.answers:
+        raise TargetError("answer needs at least one ANSWER")
+    done = menu.answer(rex, t, a.answers, submit=not a.no_submit, key=a.key)
+    state = "on_review_page" if a.no_submit else "answered"
+    if a.json:
+        print(json.dumps({"status": state, "session": t.session_id, "block": t.block_id, **done},
+                         ensure_ascii=False))
+        return 0
+    picked = f" picked={shlex.quote(done['picked'])}" if done["picked"] else ""
+    print(f"status={state}{picked} {head}")
+    print("----- answered prompt -----")
+    print(done["prompt"])
+    print("----- end -----")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except TargetError as e:
+        print(f"agent-menu: {e}", file=sys.stderr)
+        sys.exit(2)
+    except menu.MenuError as e:
+        print(f"agent-menu: {e}", file=sys.stderr)
+        sys.exit(1)
+    except RexError as e:
+        print(f"agent-menu: {e}", file=sys.stderr)
+        sys.exit(1)

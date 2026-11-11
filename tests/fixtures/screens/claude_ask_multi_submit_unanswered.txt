@@ -1,0 +1,21 @@
+
+❯ This is a UI test. Immediately call the AskUserQuestion tool exactly once
+  with 3 questions (no other tools, no prose first): Q1 header 'Color'
+  single-select options Red/Green/Blue; Q2 header 'Pets' multiSelect true
+  options Cat/Dog/Fish; Q3 header 'Size' single-select options Small/Large.
+  Give each option a one-line description. After answers, reply with one short
+  sentence.
+
+────────────────────────────────────────────────────────────────────────────────
+←  ☐ Color  ☐ Pets  ☐ Size  ✔ Submit  →
+
+Review your answers
+
+⚠ You have not answered all questions
+
+Ready to submit your answers?
+
+❯ 1. Submit answers
+  2. Cancel
+
+

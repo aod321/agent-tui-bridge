@@ -1,0 +1,24 @@
+  commands.
+
+
+• I’ll run touch hello.txt in the current directory and request escalated
+  permission if the sandbox blocks it.
+
+• Running touch hello.txt
+
+
+  Would you like to run the following command?
+
+  Environment: local
+
+  Reason: The read-only sandbox blocked creating hello.txt. Allow running
+  touch hello.txt with escalated permission in the current directory?
+
+  $ touch hello.txt
+
+
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that start with `touch hello.txt` (p)
+  3. No, and tell Codex what to do differently (esc)
+
+  Press enter to confirm or esc to cancel

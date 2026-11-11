@@ -1,0 +1,23 @@
+
+[0m[38;2;153;153;153m[48;2;55;55;55m❯ [0m[38;2;255;255;255m[48;2;55;55;55mThis is a UI test. Immediately call the AskUserQuestion tool exactly once [0m[48;2;55;55;55m    [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55mwith 3 questions (no other tools, no prose first): Q1 header 'Color' [0m[48;2;55;55;55m         [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55msingle-select options Red/Green/Blue; Q2 header 'Pets' multiSelect true [0m[48;2;55;55;55m      [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55moptions Cat/Dog/Fish; Q3 header 'Size' single-select options Small/Large. [0m[48;2;55;55;55m    [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55mGive each option a one-line description. After answers, reply with one short [0m[48;2;55;55;55m [0m
+[0m[48;2;55;55;55m  [0m[38;2;255;255;255m[48;2;55;55;55msentence.[0m[48;2;55;55;55m                                                                     [0m
+
+[0m[38;2;153;153;153m────────────────────────────────────────────────────────────────────────────────[0m
+←[2C☐[1CColor[2C☐[1CPets[2C☐[1CSize[1C[0m[38;2;0;0;0m[48;2;177;185;249m ✔ Submit [0m[38;2;153;153;153m →[0m
+
+[0m[1m[38;2;255;255;255mReview your answers[0m
+
+[0m[38;2;255;193;7m⚠[1CYou have not answered all questions[0m
+
+[0m[38;2;153;153;153mReady to submit your answers?[0m
+
+[0m[38;2;177;185;249m❯[0m [0m[38;2;153;153;153m1. [0m[38;2;177;185;249mSubmit answers[0m
+ [1C[0m[38;2;153;153;153m2. [0mCancel
+[2C   
+
+  
+

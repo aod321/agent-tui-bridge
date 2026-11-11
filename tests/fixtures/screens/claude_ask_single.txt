@@ -1,0 +1,16 @@
+
+❯ Pick a fruit for the demo.
+────────────────────────────────────────────────────────────────────────────────
+ ☐ Fruit
+
+Which fruit do you prefer?
+
+❯ 1. Apple
+     A crisp, sweet or tart tree fruit.
+  2. Pear
+     A soft, juicy fruit with a mellow sweetness.
+  3. Type something.
+────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel

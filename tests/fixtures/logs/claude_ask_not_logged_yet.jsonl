@@ -1,0 +1,6 @@
+{"type": "user", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "u1", "message": {"role": "user", "content": "Clean up the proxy profile."}}
+{"type": "mode", "mode": "normal", "sessionId": "00000000-0000-4000-8000-000000000001"}
+{"type": "permission-mode", "permissionMode": "auto", "sessionId": "00000000-0000-4000-8000-000000000001"}
+{"type": "attachment", "sessionId": "00000000-0000-4000-8000-000000000001", "isSidechain": false, "cwd": "/Users/me/projects/demo", "version": "2.1.322", "uuid": "a1", "attachment": {"type": "skill_listing"}}
+{"type": "api-request", "sessionId": "00000000-0000-4000-8000-000000000001", "id": "r1", "timestamp": "2026-11-11T09:55:46.900Z"}
+{"type": "ai-title", "aiTitle": "Proxy profile cleanup", "sessionId": "00000000-0000-4000-8000-000000000001"}

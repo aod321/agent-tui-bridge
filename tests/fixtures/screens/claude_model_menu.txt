@@ -1,0 +1,24 @@
+  Give each option a one-line description. After answers, reply with one short
+  sentence.
+
+⏺ User answered Claude's questions:
+  ⎿  · Which color do you prefer? → Green
+     · Which pets do you like? Select all that apply. → Cat, Fish
+     · Which size do you prefer? → Large
+
+⏺ You chose Green for color, Cat and Fish for pets, and Large for size.
+
+✻ Churned for 9s · done 5:58 PM
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+   Select model
+   Switch between Claude models. Your pick becomes the default for new
+   sessions. For other/previous model names, specify with --model.
+
+     1.  Default (recommended)  Opus 5.5 · Best for everyday, complex tasks
+   ❯ 2.  Opus 5.5 ✔             For complex work and everyday tasks
+   ↓ 3.  Sonnet 5.5             Most efficient for simpler tasks
+      … +3 models
+
+   ◉ xHigh effort ←/→ to adjust
+
+   Enter to set as default · s to use this session only · Esc to cancel

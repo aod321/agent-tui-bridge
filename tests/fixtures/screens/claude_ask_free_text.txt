@@ -1,0 +1,15 @@
+
+────────────────────────────────────────────────────────────────────────────────
+ ☐ Fruit
+
+Which fruit do you prefer?
+
+  1. Apple
+     A crisp, sweet or tart tree fruit.
+  2. Pear
+     A soft, juicy fruit with a mellow sweetness.
+❯ 3. 芒果 mango
+────────────────────────────────────────────────────────────────────────────────
+  4. Chat about this
+
+-- INSERT -- · Enter to select · ↑/↓ to navigate · ctrl+g to edit in VS Code

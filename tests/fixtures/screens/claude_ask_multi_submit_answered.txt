@@ -1,0 +1,17 @@
+
+────────────────────────────────────────────────────────────────────────────────
+←  ☒ Color  ☒ Pets  ☒ Size  ✔ Submit  →
+
+Review your answers
+
+ ● Which color do you prefer?
+   → Green
+ ● Which pets do you like? Select all that apply.
+   → Cat, Fish
+ ● Which size do you prefer?
+   → Large
+
+Ready to submit your answers?
+
+❯ 1. Submit answers
+  2. Cancel

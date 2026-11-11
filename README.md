@@ -51,4 +51,4 @@ Detection combines Rex's program status (Claude Code and Codex report `blocked` 
 python3 -m unittest discover -s tests
 ```
 
-The parsers are tested against captured screens and JSONL samples in `tests/fixtures/` (paths and personal details replaced), including the four-page `Pruning / lisa / Airport / Shadowrocket` question menu. `tests/test_menu.py` drives `agent-menu` against a simulator of Claude Code's question menu.
+The parsers are tested against captured screens and JSONL samples in `tests/fixtures/` (paths and personal details replaced), including a four-page question menu. `tests/test_menu.py` drives `agent-menu` against a simulator of Claude Code's question menu.

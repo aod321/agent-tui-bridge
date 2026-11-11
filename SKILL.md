@@ -42,7 +42,7 @@ The status line is shell-quoted `key=value` pairs (`shlex.split` it). `--json` p
 
 ### When it says needs_input
 1. **Relay it verbatim.** Copy the block between `----- prompt (screen, verbatim) -----` and `----- end prompt -----` to the person unchanged. When the log already has the questions, a `----- questions (session log) -----` block lists every question with numbered options.
-2. **Multi-question menus** (`tabs=N` in the status line, e.g. `←  ☐ Pruning  ☐ lisa  ☐ Airport  ☐ Shadowrocket  ✔ Submit  →`) show only page 1 on screen. Read all pages without answering, then relay all of them:
+2. **Multi-question menus** (`tabs=N` in the status line, e.g. `←  ☐ Topic A  ☐ Topic B  ✔ Submit  →`) show only page 1 on screen. Read all pages without answering, then relay all of them:
    ```bash
    $REPO/bin/agent-menu read -s "$SID"
    ```
@@ -58,7 +58,7 @@ The status line is shell-quoted `key=value` pairs (`shlex.split` it). `--json` p
    - To dismiss a prompt: `$REPO/bin/term-key -s "$SID" esc`.
 4. Watch again: `$REPO/bin/agent-watch claude -s "$SID" --from "$N"`. Repeat until `turn_end`.
 
-**Never `term-send` while a prompt is waiting.** The text goes to the menu as key presses, and the Enter picks whatever the cursor is on (on the trust screen that is "No, exit", which quits Claude).
+**Never `term-send` while a prompt is waiting.** The text goes to the menu as key presses, and the Enter picks whatever the cursor is on (on the trust screen that is "No, exit", which quits Claude). Claude Code's empty input box shows a grey prompt suggestion, so it can look as if text is already typed after `❯`; pressing Enter on it does nothing, so send your own text with `term-send`.
 
 ### How it detects "needs a person"
 It polls about once a second (`--interval`) and combines:
